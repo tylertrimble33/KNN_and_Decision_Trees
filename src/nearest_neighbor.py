@@ -60,7 +60,7 @@ def euclidean(a, b):
     :return: the euclidean distance between the two samples
     """
     # TODO - implement me
-    pass
+    return np.linalg.norm(a - b)
 
 
 def cosine(a, b):
@@ -71,7 +71,9 @@ def cosine(a, b):
     :return: the cosine distance between the two samples
     """
     # TODO - implement me
-    pass
+    num = np.sum(a * b)
+    den = np.sqrt(np.sum(a ** 2)) * np.sqrt(np.sum(b ** 2))
+    return 1 - (num / den)
 
 
 if __name__ == '__main__':
