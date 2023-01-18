@@ -16,7 +16,18 @@ def nearest_neighbor(dataset, new_sample, distance_measure):
     """
     # TODO - implement me first - make sure your code works with a single
     #  nearest neighbor before adapting it to k-nearest neighbors
-    pass
+
+    # set initial distance for sample distance testing
+    dist = distance_measure(dataset[0]), new_sample
+
+    # find closer neighbors
+    for data in dataset:
+        if distance_measure(data, new_sample) < dist:
+            dist = distance_measure(data, new_sample)
+
+        # If data point is the closest point, return its label
+        else:
+            return data
 
 
 def classify_samples(labeled_dataset, unlabeled_samples, k, distance_measure):
@@ -71,9 +82,9 @@ def cosine(a, b):
     :return: the cosine distance between the two samples
     """
     # TODO - implement me
-    num = np.sum(a * b)
-    den = np.sqrt(np.sum(a ** 2)) * np.sqrt(np.sum(b ** 2))
-    return 1 - (num / den)
+    # num = np.sum(a * b)
+    # den = np.sqrt(np.sum(a ** 2)) * np.sqrt(np.sum(b ** 2))
+    return 1 - ((np.sum(a * b)) / (np.sqrt(np.sum(a ** 2)) * np.sqrt(np.sum(b ** 2))))
 
 
 if __name__ == '__main__':
