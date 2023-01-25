@@ -16,7 +16,6 @@ def nearest_neighbor(dataset, new_sample, distance_measure):
     """
     # TODO - implement me first - make sure your code works with a single
     #  nearest neighbor before adapting it to k-nearest neighbors
-
     mydict = {}
 
     # Make a dictionary with key, distance to the new sample
@@ -56,6 +55,7 @@ def classify_sample(labeled_dataset, new_sample, k, distance_measure):
     :param distance_measure: the distance measure to use
     :return: the label of new_sample
     """
+    # TODO - implement me
     mydict = {}
     labels = []
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     k = 5
 
     # the figure title and output
-    fig_output = os.path.join("output", "KNN_K5_euclidean")
+    fig_output = os.path.join("..", "output", "KNN_K5_euclidean")
     fig_title = 'KNN (K=5) Euclidean Distance Classification (Tyler Trimble)'
 
     # generate test and training data
@@ -131,4 +131,4 @@ if __name__ == '__main__':
     plt.grid(True, lw=0.5)
     plt.legend()
     plt.show()
-    # fig.savefig(fig_output)
+    fig.savefig(fig_output)

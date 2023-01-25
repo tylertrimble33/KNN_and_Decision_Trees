@@ -31,6 +31,10 @@ def find_features_for_continuous_data(data):
     # Minor Implementation note: When creating the dictionary of points there may be collisions
     # where is already in the dictionary (possibly with a different label). It is OK to ignore
     # these collisions (just overwrite the previous value).
+    points = {}
+
+    # Sort the dictionary by the value
+    points = sorted(points.items(), ley=lambda item: item[0])
     pass
 
 
@@ -57,7 +61,8 @@ def entropy(dataset):
     :return: the entropy of the dataset
     """
     # TODO - implement me
-    pass
+    labels = max(dataset.labels) / dataset.num_samples
+    return -np.sum(labels * np.log(labels) - (1-labels) * np.log(1-labels))
 
 
 class Node:
@@ -204,7 +209,7 @@ if __name__ == '__main__':
     # hard-coded parameters
     max_depth = 10
     fig_output = os.path.join("output", "Decision_Tree_max_depth_10")
-    fig_title = 'Decision Tree (Max_Depth=10) Classification [TODO - insert your name here]'
+    fig_title = 'Decision Tree (Max_Depth=10) Classification [Tyler Trimble]'
 
     # generate test and training data
     data1 = generate_data(500, [1, 1], [[0.3, 0.2], [0.2, 0.2]], 0)
