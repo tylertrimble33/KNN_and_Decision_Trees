@@ -17,17 +17,16 @@ def nearest_neighbor(dataset, new_sample, distance_measure):
     # TODO - implement me first - make sure your code works with a single
     #  nearest neighbor before adapting it to k-nearest neighbors
 
-    # set initial distance for sample distance testing
-    dist = distance_measure(dataset[0]), new_sample
+    mydict = {}
 
-    # find closer neighbors
-    for data in dataset:
-        if distance_measure(data, new_sample) < dist:
-            dist = distance_measure(data, new_sample)
+    # Make a dictionary with key, distance to the new sample
+    # Value, the label of that point, and then sort the dict
+    for i in range(dataset.num_samples):
+        distance = distance_measure(dataset.samples[i], new_sample)
+        mydict[distance] = dataset.labels[i]
+    mydict = sorted(mydict.items())
 
-        # If data point is the closest point, return its label
-        else:
-            return data
+    return mydict[1]
 
 
 def classify_samples(labeled_dataset, unlabeled_samples, k, distance_measure):
@@ -57,10 +56,22 @@ def classify_sample(labeled_dataset, new_sample, k, distance_measure):
     :param distance_measure: the distance measure to use
     :return: the label of new_sample
     """
-    # TODO - implement me
-    #  Hint: this can be trickier than it seems, find the distance to all points
-    #        then, find the k-closest points, then take a vote using those points
-    pass
+    mydict = {}
+    labels = []
+
+    # Make a dictionary with key, distance to the new sample
+    # Value, the label of that point, and then sort the dict
+    for i in range(labeled_dataset.num_samples):
+        distance = distance_measure(labeled_dataset.samples[i], new_sample)
+        mydict[distance] = labeled_dataset.labels[i]
+    mydict = sorted(mydict.items())
+
+    # Make a list of the K number of the closest labels
+    for sample in mydict[0:k]:
+        labels.append(sample[1])
+
+    # Find mode of the list of labels and return it
+    return max(labels, key=labels.count)
 
 
 def euclidean(a, b):
@@ -82,8 +93,6 @@ def cosine(a, b):
     :return: the cosine distance between the two samples
     """
     # TODO - implement me
-    # num = np.sum(a * b)
-    # den = np.sqrt(np.sum(a ** 2)) * np.sqrt(np.sum(b ** 2))
     return 1 - ((np.sum(a * b)) / (np.sqrt(np.sum(a ** 2)) * np.sqrt(np.sum(b ** 2))))
 
 
@@ -94,7 +103,7 @@ if __name__ == '__main__':
 
     # the figure title and output
     fig_output = os.path.join("output", "KNN_K5_euclidean")
-    fig_title = 'KNN (K=5) Euclidean Distance Classification'
+    fig_title = 'KNN (K=5) Euclidean Distance Classification (Tyler Trimble)'
 
     # generate test and training data
     data1 = generate_data(500, [1, 1], [[0.3, 0.2], [0.2, 0.2]], 0)
@@ -121,4 +130,5 @@ if __name__ == '__main__':
     plt.tight_layout()
     plt.grid(True, lw=0.5)
     plt.legend()
-    fig.savefig(fig_output)
+    plt.show()
+    # fig.savefig(fig_output)
