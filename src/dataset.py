@@ -165,6 +165,19 @@ class Dataset:
         :return: a tuple containing two Dataset Objects (test_dataset, training_dataset)
         """
         # TODO - implement me
+        # determine the number of samples in the test set
+        num_test_samples = int(self.num_samples * (test_percent / 100))
+
+        # split the samples and labels into test and train sets
+        test_samples = self.samples[:num_test_samples]
+        test_labels = self.labels[:num_test_samples]
+        train_samples = self.samples[num_test_samples:]
+        train_labels = self.labels[num_test_samples:]
+
+        # create and return the test and training datasets
+        test_dataset = Dataset(test_samples, test_labels)
+        train_dataset = Dataset(train_samples, train_labels)
+        return test_dataset, train_dataset
 
     def split_into_folds(self, num_folds):
         """
@@ -184,3 +197,16 @@ class Dataset:
 
         #TODO - implement me
         # Hint: How will you deal with data that doesn't divide evenly
+        # determine the number of samples per fold
+        samples_per_fold = int(self.num_samples / num_folds)
+
+        # split the samples and labels into folds
+        folds = []
+        for i in range(num_folds):
+            start = i * samples_per_fold
+            end = (i + 1) * samples_per_fold
+            fold_samples = self.samples[start:end]
+            fold_labels = self.labels[start:end]
+            folds.append(Dataset(fold_samples, fold_labels))
+
+        return folds

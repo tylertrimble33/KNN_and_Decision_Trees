@@ -31,11 +31,32 @@ def find_features_for_continuous_data(data):
     # Minor Implementation note: When creating the dictionary of points there may be collisions
     # where is already in the dictionary (possibly with a different label). It is OK to ignore
     # these collisions (just overwrite the previous value).
-    points = {}
 
-    # Sort the dictionary by the value
-    points = sorted(points.items(), ley=lambda item: item[0])
-    pass
+    feats = []
+
+    for feature in range(data.num_features):
+        points = {}
+
+        for sample in range(data.num_samples):
+            if data.labels[sample] not in points:
+                points[data.labels[sample]] = []
+            # points[data.labels[sample]].append(sample.features[feature])
+            points[data.labels[sample]].append(data.labels[feature])
+        split_points = []
+
+        for label in points:
+            points[label].sort()
+            last_value = None
+
+            for value in points[label]:
+                if last_value is not None:
+                    split_points.append((last_value + value) / 2)
+                last_value = value
+
+        split_points = list(set(split_points))
+        split_points.sort()
+        feats.append(split_points)
+    return feats
 
 
 def featurize_continuous_data(data, features):
@@ -50,7 +71,20 @@ def featurize_continuous_data(data, features):
     # Hint: Recall, you create a set of features which indicates the feature number
     #       and value for a "is sample[feature_number] < value" type test. This method
     #       converts numeric data to binary (True/False) data using those features
-    pass
+    featurized_samples = []
+
+    for sample in range(data.num_samples):
+        featurized_sample = []
+
+        for feature, split_points in zip(data.samples[sample], features):
+
+            for split in split_points:
+                if feature < split:
+                    featurized_sample.append(True)
+            else:
+                featurized_sample.append(False)
+        featurized_samples.append(featurized_sample)
+    return Dataset(featurized_samples, data.labels)
 
 
 def entropy(dataset):
@@ -61,8 +95,18 @@ def entropy(dataset):
     :return: the entropy of the dataset
     """
     # TODO - implement me
-    labels = max(dataset.labels) / dataset.num_samples
-    return -np.sum(labels * np.log(labels) - (1-labels) * np.log(1-labels))
+    counts = [0] * len(dataset.labels)
+    total = len(dataset.samples)
+
+    for sample in dataset.samples:
+        counts[sample.label] += 1
+    ent = 0
+
+    for count in counts:
+        prob = count / total
+        if prob > 0:
+            ent -= prob * np.log2(prob)
+    return ent
 
 
 class Node:
@@ -103,7 +147,15 @@ class Node:
         #  Hint: This is a helper function for find_feature_which_best_spits.
         #  It splits the dataset at this node into samples which are
         #  true vs. false for the feature at feature_index
-        pass
+        data_true = []
+        data_false = []
+
+        for sample in self.data:
+            if sample[feature_index]:
+                data_true.append(sample)
+            else:
+                data_false.append(sample)
+        return data_true, data_false
 
     def find_feature_which_best_splits(self):
         """
@@ -114,7 +166,27 @@ class Node:
                  returns -1 if no feature increases information
         """
         # TODO - implement me
-        pass
+        best_feature = -1
+        best_information_gain = 0
+        current_entropy = entropy(self.data)
+
+        for feature_index in range(self.data.num_features):
+            true_data, false_data = self.split_by(feature_index)
+
+            true_data_probability = len(true_data) / len(self.data)
+            true_data_entropy = entropy(Dataset(true_data))
+
+            false_data_probability = len(false_data) / len(self.data)
+            false_data_entropy = entropy(Dataset(false_data))
+
+            information_gain = current_entropy - (true_data_probability * true_data_entropy) - (
+                    false_data_probability * false_data_entropy)
+
+            if information_gain > best_information_gain:
+                best_feature = feature_index
+                best_information_gain = information_gain
+
+        return best_feature
 
 
 class DecisionTree:
@@ -136,7 +208,11 @@ class DecisionTree:
                  prediction of each sample in data
         """
         # TODO - implement me
-        pass
+        predictions = []
+
+        for sample in data.samples:
+            predictions.append(self._predict_sample(sample, self.root))
+        return np.array(predictions)
 
     def _predict_sample(self, sample, current_node):
         """
@@ -150,7 +226,12 @@ class DecisionTree:
         #  Hint: to perform prediction, traverse the tree with the sample.
         #  The final prediction should be the majority class of leaf node
         #  reached by traversing the tree with the sample.
-        pass
+        # if current_node.true_child is None:
+        #     return
+        # elif sample[current_node.split_feature] <= current_node.split_value:
+        #     return self._predict_sample(sample, current_node.false_child)
+        # else:
+        #     return self._predict_sample(sample, current_node.true_child)
 
     def __str__(self):
         """
@@ -202,13 +283,12 @@ class DecisionTree:
         #      all classes are the same
         #      splitting by a feature adds no information
         #      depth > max depth
-        pass
 
 
 if __name__ == '__main__':
     # hard-coded parameters
     max_depth = 10
-    fig_output = os.path.join("output", "Decision_Tree_max_depth_10")
+    fig_output = os.path.join("..", "output", "Decision_Tree_max_depth_10")
     fig_title = 'Decision Tree (Max_Depth=10) Classification [Tyler Trimble]'
 
     # generate test and training data
