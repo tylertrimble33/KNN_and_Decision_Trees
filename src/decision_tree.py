@@ -227,11 +227,13 @@ class DecisionTree:
         #  The final prediction should be the majority class of leaf node
         #  reached by traversing the tree with the sample.
         # if current_node.true_child is None:
-        #     return
-        # elif sample[current_node.split_feature] <= current_node.split_value:
+        #     return featurize_continuous_data(current_node.data, self.features).labels.max()
+        # elif sample[current_node.] <= current_node.split_value:
         #     return self._predict_sample(sample, current_node.false_child)
         # else:
         #     return self._predict_sample(sample, current_node.true_child)
+        # print(featurize_continuous_data(current_node.data, self.features).labels.max())
+        print(current_node.)
 
     def __str__(self):
         """
