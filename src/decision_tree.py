@@ -32,31 +32,21 @@ def find_features_for_continuous_data(data):
     # where is already in the dictionary (possibly with a different label). It is OK to ignore
     # these collisions (just overwrite the previous value).
 
-    feats = []
+    features = []
 
-    for feature in range(data.num_features):
+    for i in range(data.num_features):
         points = {}
+        for j in range(data.num_samples):
+            points[data.samples[j][i]] = data.labels[j]
 
-        for sample in range(data.num_samples):
-            if data.labels[sample] not in points:
-                points[data.labels[sample]] = []
-            # points[data.labels[sample]].append(sample.features[feature])
-            points[data.labels[sample]].append(data.labels[feature])
-        split_points = []
+        sorted_points = sorted(points.items(), key=lambda item: item[0])
+        split_values = []
 
-        for label in points:
-            points[label].sort()
-            last_value = None
-
-            for value in points[label]:
-                if last_value is not None:
-                    split_points.append((last_value + value) / 2)
-                last_value = value
-
-        split_points = list(set(split_points))
-        split_points.sort()
-        feats.append(split_points)
-    return feats
+        for j in range(1, len(sorted_points)):
+            if sorted_points[j][1] != sorted_points[j - 1][1]:
+                split_values.append((sorted_points[j][0] + sorted_points[j - 1][0]) / 2)
+        features.append(split_values)
+    return features
 
 
 def featurize_continuous_data(data, features):
@@ -71,19 +61,16 @@ def featurize_continuous_data(data, features):
     # Hint: Recall, you create a set of features which indicates the feature number
     #       and value for a "is sample[feature_number] < value" type test. This method
     #       converts numeric data to binary (True/False) data using those features
-    featurized_samples = []
 
-    for sample in range(data.num_samples):
-        featurized_sample = []
+    featurized_samples = np.zeros((data.num_samples, len(features)))
 
-        for feature, split_points in zip(data.samples[sample], features):
+    for i in range(data.num_samples):
+        for j, split_values in enumerate(features):
+            for split_value in split_values:
+                if data.samples[i][j] < split_value:
+                    featurized_samples[i][j] = 1
+                    break
 
-            for split in split_points:
-                if feature < split:
-                    featurized_sample.append(True)
-            else:
-                featurized_sample.append(False)
-        featurized_samples.append(featurized_sample)
     return Dataset(featurized_samples, data.labels)
 
 
@@ -98,8 +85,8 @@ def entropy(dataset):
     counts = [0] * len(dataset.labels)
     total = len(dataset.samples)
 
-    for sample in dataset.samples:
-        counts[sample.label] += 1
+    for sample in range(len(dataset.samples)):
+        counts[int(dataset.labels[sample])] += 1
     ent = 0
 
     for count in counts:
@@ -148,14 +135,19 @@ class Node:
         #  It splits the dataset at this node into samples which are
         #  true vs. false for the feature at feature_index
         data_true = []
+        data_true_labels = []
         data_false = []
+        data_false_labels = []
+        data = self.data.samples
 
-        for sample in self.data:
-            if sample[feature_index]:
-                data_true.append(sample)
+        for sample in range(len(data)):
+            if data[sample][feature_index]:
+                data_true.append(data[sample])
+                data_true_labels.append(self.data.labels[sample])
             else:
-                data_false.append(sample)
-        return data_true, data_false
+                data_false.append(data[sample])
+                data_false_labels.append(self.data.labels[sample])
+        return data_true, data_true_labels, data_false, data_false_labels
 
     def find_feature_which_best_splits(self):
         """
@@ -170,20 +162,19 @@ class Node:
         best_information_gain = 0
         current_entropy = entropy(self.data)
 
-        for feature_index in range(self.data.num_features):
-            true_data, false_data = self.split_by(feature_index)
+        for feature_idx in range(self.data.num_features):
+            true_data, true_data_labels, false_data, false_data_labels = self.split_by(feature_idx)
+            true_data_probability = len(true_data) / len(self.data.samples)
+            true_data_entropy = entropy(Dataset(true_data, true_data_labels))
 
-            true_data_probability = len(true_data) / len(self.data)
-            true_data_entropy = entropy(Dataset(true_data))
-
-            false_data_probability = len(false_data) / len(self.data)
-            false_data_entropy = entropy(Dataset(false_data))
+            false_data_probability = len(false_data) / len(self.data.samples)
+            false_data_entropy = entropy(Dataset(false_data, false_data_labels))
 
             information_gain = current_entropy - (true_data_probability * true_data_entropy) - (
                     false_data_probability * false_data_entropy)
 
             if information_gain > best_information_gain:
-                best_feature = feature_index
+                best_feature = feature_idx
                 best_information_gain = information_gain
 
         return best_feature
@@ -226,14 +217,16 @@ class DecisionTree:
         #  Hint: to perform prediction, traverse the tree with the sample.
         #  The final prediction should be the majority class of leaf node
         #  reached by traversing the tree with the sample.
-        # if current_node.true_child is None:
-        #     return featurize_continuous_data(current_node.data, self.features).labels.max()
-        # elif sample[current_node.] <= current_node.split_value:
-        #     return self._predict_sample(sample, current_node.false_child)
-        # else:
-        #     return self._predict_sample(sample, current_node.true_child)
+        # if sample < current_node.feature_index:
+        #     print("Sample: " + str(sample))
+        if current_node.true_child is None:
+            return current_node.data.get_majority_class()
+        elif sample[current_node.feature_index]:
+            return self._predict_sample(sample, current_node.false_child)
+        else:
+            return self._predict_sample(sample, current_node.true_child)
         # print(featurize_continuous_data(current_node.data, self.features).labels.max())
-        print(current_node.)
+        # print(current_node.)
 
     def __str__(self):
         """
@@ -286,6 +279,28 @@ class DecisionTree:
         #      splitting by a feature adds no information
         #      depth > max depth
 
+        if depth > self.max_depth:
+            return
+        if current_node.data.all_classes_same():
+            return
+        if current_node.find_feature_which_best_splits() == -1:
+            return
+        else:
+
+            split_feature = current_node.find_feature_which_best_splits()
+            current_node.feature_index = split_feature
+            true_data, true_data_labels, false_data, false_data_labels = current_node.split_by(current_node.feature_index)
+
+            current_node.true_child = Node()
+            current_node.true_child.data = Dataset(true_data, true_data_labels)
+            current_node.false_child = Node()
+            current_node.false_child.data = Dataset(false_data, false_data_labels)
+
+            self._divide(current_node.true_child, depth+1)
+            self._divide(current_node.false_child, depth+1)
+            # print(split_feature)
+        # print(current_node.find_feature_which_best_splits())
+
 
 if __name__ == '__main__':
     # hard-coded parameters
@@ -299,6 +314,7 @@ if __name__ == '__main__':
     training_dataset = combine_data(data1, data2)
     test_dataset = generate_data(300, [2, 3], [[0.3, 0.0], [0.0, 0.2]], -1)
 
+    # print("Features: " + str(find_features_for_continuous_data(training_dataset)))
     # find features in the training data
     features = find_features_for_continuous_data(training_dataset)
     feature_index = 0
